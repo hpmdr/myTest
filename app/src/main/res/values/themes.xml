@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 亮色模式下的主题 -->
+    <style name="Theme.MyTest" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 关键：将窗口背景设置为我们定义的浅色 -->
+        <item name="android:windowBackground">@color/light_background</item>
+    </style>
+</resources>

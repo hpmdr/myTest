@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 暗色模式下的主题 -->
+    <style name="Theme.MyTest" parent="android:Theme.Material.NoActionBar">
+        <!-- 关键：将窗口背景设置为我们定义的深色 -->
+        <item name="android:windowBackground">@color/dark_background</item>
+    </style>
+</resources>
