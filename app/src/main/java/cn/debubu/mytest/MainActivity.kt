@@ -9,8 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import cn.debubu.mytest.ui.screen.AppNavigation
-import cn.debubu.mytest.ui.screen.MainScreen
+import cn.debubu.mytest.ui.navigation.AppNavigation
 import cn.debubu.mytest.ui.theme.MyTestTheme
 
 class MainActivity : ComponentActivity() {

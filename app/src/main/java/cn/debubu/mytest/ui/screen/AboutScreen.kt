@@ -16,7 +16,7 @@ import androidx.navigation.NavController
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(navcontroller: NavController) {
+fun AboutScreen(navcontroller: NavController, name: String) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -25,11 +25,12 @@ fun AboutScreen(navcontroller: NavController) {
             )
         },
     ) { innerPadding ->
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)) {
-            Text("这是关于页面的内容")
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Text("这是关于页面的内容,接收到的参数为：${name}")
         }
     }
-
 }
