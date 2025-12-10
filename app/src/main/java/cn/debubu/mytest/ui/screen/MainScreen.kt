@@ -62,9 +62,12 @@ fun MainScreen(navController: NavController) {
         ModalDrawerSheet(modifier = Modifier.fillMaxWidth(0.6f)) {
             Text("菜单")
             NavigationDrawerItem(
-                label = { Text("设置") },
+                label = { Text("网络加载列表测试") },
                 selected = false,
-                onClick = { scope.launch { drawerState.close() } })
+                onClick = {
+                    scope.launch { drawerState.close() }
+                    navController.navigate("testList")
+                })
             NavigationDrawerItem(
                 label = { Text("关于") },
                 selected = false,
