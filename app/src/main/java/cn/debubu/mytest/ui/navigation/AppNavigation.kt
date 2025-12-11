@@ -1,7 +1,6 @@
 package cn.debubu.mytest.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -10,7 +9,6 @@ import androidx.navigation.navArgument
 import cn.debubu.mytest.ui.screen.AboutScreen
 import cn.debubu.mytest.ui.screen.MainScreen
 import cn.debubu.mytest.ui.screen.TestListScreen
-import cn.debubu.mytest.ui.viewmodel.PostViewModel
 
 object Screen {
     const val MAIN = "main"
@@ -36,6 +34,7 @@ fun AppNavigation() {
             AboutScreen(navController, name)
         }
         composable(Screen.TEST_LIST) {
-            TestListScreen() }
+            TestListScreen(navController)
+        }
     }
 }

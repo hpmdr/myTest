@@ -27,9 +27,11 @@ class PostRepository @Inject constructor(
         try {
             // 从网络获取最新数据
             val postsFromApi = apiService.getPosts()
+            // 先清空数据库，确保只保留上一次的请求结果
+            postDao.clearAll()
             // 将新数据存入数据库，Room 会自动通知 allPosts 的 Flow 更新
             postDao.insertAll(postsFromApi)
-            Log.w("PostRepository", "发送了网络请求，并存入了数据库")
+            Log.w("PostRepository", "发送了网络请求，替换了数据库中的数据")
         } catch (e: Exception) {
             // 处理网络错误
             throw e // 向上抛出异常，让 ViewModel 处理
