@@ -5,19 +5,7 @@
 # Local configuration files
 /local.properties         # Local SDK paths and other local configs
 
-# IDEA configuration - some files should be shared, some ignored
-# Ignore caches and local settings
-/.idea/caches            # IDEA caches
-/.idea/libraries         # Library configurations (auto-generated)
-/.idea/workspace.xml     # Workspace settings (personal preferences)
-/.idea/navEditor.xml     # Navigation editor settings
-/.idea/assetWizardSettings.xml # Asset wizard settings
-/.idea/usage.statistics.xml # Usage statistics
-/.idea/tasks.xml         # Task configurations
-/.idea/shelf             # Shelved changes
-/.idea/dictionaries      # Custom dictionaries
-/.idea/runConfigurations.xml # Run configurations (personal)
-/.idea/profiles_settings.xml # Profile settings
+/.idea
 
 # Shared IDEA configuration files (optional - some teams ignore entire .idea)
 # /.idea/gradle.xml       # Gradle integration settings
