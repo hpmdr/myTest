@@ -29,8 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.NavController
 import cn.debubu.mytest.data.model.PostModel
+import cn.debubu.mytest.ui.navigation.currentNavController
 import cn.debubu.mytest.ui.viewmodel.PostUiState
 import cn.debubu.mytest.ui.viewmodel.PostViewModel
 
@@ -39,7 +39,8 @@ import cn.debubu.mytest.ui.viewmodel.PostViewModel
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TestListScreen(navController: NavController, postViewModel: PostViewModel = hiltViewModel()) {
+fun TestListScreen(postViewModel: PostViewModel = hiltViewModel()) {
+    val navController = currentNavController()
 
     // 从 ViewModel 收集 UI 状态
     val uiState by postViewModel.uiState.collectAsState()

@@ -9,14 +9,15 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavController
+import cn.debubu.mytest.ui.navigation.currentNavController
 
 /**
  * 关于页面
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(navcontroller: NavController, name: String) {
+fun AboutScreen(name: String) {
+    val navController = currentNavController()
     Scaffold(
         topBar = {
             TopAppBar(

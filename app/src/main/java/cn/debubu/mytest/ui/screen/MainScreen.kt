@@ -33,13 +33,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavController
+import cn.debubu.mytest.ui.navigation.currentNavController
+import cn.debubu.mytest.ui.navigation.navigateToAbout
 import cn.debubu.mytest.ui.theme.MyTestTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(navController: NavController) {
+fun MainScreen() {
+    val navController = currentNavController()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val pages = listOf<@Composable () -> Unit>(
@@ -73,7 +75,7 @@ fun MainScreen(navController: NavController) {
                 selected = false,
                 onClick = {
                     scope.launch { drawerState.close() }
-                    navController.navigate("about")
+                    navController.navigateToAbout("about")
                 })
         }
     }) {

@@ -2,10 +2,12 @@
 package cn.debubu.mytest.data.di
 
 import android.content.Context
+import android.telephony.TelephonyManager
 import androidx.room.Room
 import cn.debubu.mytest.data.local.AppDatabase
 import cn.debubu.mytest.data.local.PostDao
 import cn.debubu.mytest.data.remote.ApiService
+import cn.debubu.mytest.data.repository.CellularRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -82,6 +84,18 @@ object AppModule {
     @Singleton
     fun providePostDao(database: AppDatabase): PostDao {
         return database.postDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTelephonyManager(@ApplicationContext context: Context): TelephonyManager {
+        return context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+    }
+
+    @Provides
+    @Singleton
+    fun provideCellularRepository(telephonyManager: TelephonyManager): CellularRepository {
+        return CellularRepository(telephonyManager)
     }
 }
     

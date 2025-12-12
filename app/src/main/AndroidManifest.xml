@@ -4,6 +4,15 @@
 
     <!-- 添加网络访问权限 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 读取基站/信号需要定位权限 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Android 34+ 基础电话权限 -->
+    <uses-permission android:name="android.permission.READ_BASIC_PHONE_STATE" />
+    <!-- 33 及以下使用传统电话权限 -->
+    <uses-permission
+        android:name="android.permission.READ_PHONE_STATE"
+        android:maxSdkVersion="33" />
 
     <application
         android:name=".MyApplication"
