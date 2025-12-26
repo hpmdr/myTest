@@ -6,6 +6,7 @@ import android.telephony.TelephonyManager
 import androidx.room.Room
 import cn.debubu.mytest.data.local.AppDatabase
 import cn.debubu.mytest.data.local.PostDao
+import cn.debubu.mytest.data.permission.PermissionManager
 import cn.debubu.mytest.data.remote.ApiService
 import cn.debubu.mytest.data.repository.CellularRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -94,8 +95,14 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCellularRepository(telephonyManager: TelephonyManager): CellularRepository {
-        return CellularRepository(telephonyManager)
+    fun provideCellularRepository(telephonyManager: TelephonyManager, @ApplicationContext context: Context): CellularRepository {
+        return CellularRepository(telephonyManager, context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePermissionManager(@ApplicationContext context: Context): PermissionManager {
+        return PermissionManager(context)
     }
 }
     
