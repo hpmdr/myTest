@@ -1,5 +1,6 @@
 package cn.debubu.mytest.ui.screen
 
+import FakeCellularPage
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -45,7 +46,7 @@ fun MainScreen() {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val pages = listOf<@Composable () -> Unit>(
-        { CellularPage() },
+        { FakeCellularPage() },
         { WifiPage() }
     )
     var contentPageIndex by rememberSaveable { mutableIntStateOf(0) }
