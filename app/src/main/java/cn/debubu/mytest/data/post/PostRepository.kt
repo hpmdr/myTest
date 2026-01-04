@@ -1,12 +1,12 @@
 package cn.debubu.mytest.data.post
 
-import android.util.Log
 import cn.debubu.mytest.data.local.PostDao
 import cn.debubu.mytest.data.post.PostEntity
 import cn.debubu.mytest.data.remote.ApiService
 import cn.debubu.mytest.data.post.PostDto
 import cn.debubu.mytest.data.post.PostDtoMapper
 import kotlinx.coroutines.flow.Flow
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,7 +37,7 @@ class PostRepository @Inject constructor(
             val postsToInsert: List<PostEntity> = PostDtoMapper.toEntityList(postsFromApi)
             // 将转换后的数据存入数据库，Room 会自动通知 allPosts 的 Flow 更新
             postDao.insertAll(postsToInsert)
-            Log.w("PostRepository", "发送了网络请求，替换了数据库中的数据")
+            Timber.w("发送了网络请求，替换了数据库中的数据")
         } catch (e: Exception) {
             // 处理网络错误
             throw e // 向上抛出异常，让 ViewModel 处理

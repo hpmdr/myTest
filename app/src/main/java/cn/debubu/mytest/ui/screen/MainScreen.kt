@@ -1,7 +1,5 @@
 package cn.debubu.mytest.ui.screen
 
-import cn.debubu.mytest.ui.cellular.FakeCellularPage
-import cn.debubu.mytest.ui.wifi.WifiPage
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -35,9 +33,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import cn.debubu.mytest.ui.cellular.CellularPage
 import cn.debubu.mytest.ui.navigation.currentNavController
 import cn.debubu.mytest.ui.navigation.navigateToAbout
 import cn.debubu.mytest.ui.theme.MyTestTheme
+import cn.debubu.mytest.ui.wifi.WifiPage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,7 +47,7 @@ fun MainScreen() {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val pages = listOf<@Composable () -> Unit>(
-        { FakeCellularPage() },
+        { CellularPage() },
         { WifiPage() }
     )
     var contentPageIndex by rememberSaveable { mutableIntStateOf(0) }

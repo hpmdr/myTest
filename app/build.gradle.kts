@@ -35,8 +35,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
     buildFeatures {
         compose = true
@@ -83,6 +85,9 @@ dependencies {
     kapt(libs.room.compiler) // 如果使用 kapt
     // ksp(libs.room.compiler) // 如果使用 ksp
     implementation(libs.room.ktx)
+
+    // Timber 日志库
+    implementation(libs.timber)
 
 
     testImplementation(libs.junit)

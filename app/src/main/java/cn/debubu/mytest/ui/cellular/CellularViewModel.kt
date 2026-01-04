@@ -1,175 +1,104 @@
 package cn.debubu.mytest.ui.cellular
 
-import android.Manifest
-import android.app.Activity
-import android.content.Context
-import android.os.Build
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.debubu.mytest.data.cellular.CellularSignalModel
-import cn.debubu.mytest.data.permission.PermissionManager
-import cn.debubu.mytest.data.permission.PermissionState
+import cn.debubu.mytest.data.cellular.CellularData
 import cn.debubu.mytest.data.cellular.CellularRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
-
-data class CellularUiState(
-    val status: String = "准备获取权限",
-    val signals: CellularSignalModel? = null,
-    val isLoading: Boolean = false,
-    val showSettingsButton: Boolean = false,
-    val permissionState: PermissionState = PermissionState(),
-    val showPermissionDialog: Boolean = false,
-    val showPermanentDenialDialog: Boolean = false
-)
 
 @HiltViewModel
 class CellularViewModel @Inject constructor(
-    private val repository: CellularRepository,
-    private val permissionManager: PermissionManager,
-    @param:ApplicationContext private val appContext: Context
+    private val repository: CellularRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(CellularUiState())
-    val uiState: StateFlow<CellularUiState> = _uiState.asStateFlow()
+    var activeSim by mutableIntStateOf(1)
+        private set
+
+    private val _sim1Data = mutableStateOf<CellularData?>(null)
+    private val _sim2Data = mutableStateOf<CellularData?>(null)
+
+    private val _currentSignalState = mutableStateOf(SignalState())
+    val currentSignalState: State<SignalState> = _currentSignalState
 
     init {
-        // 收集Repository的信号数据流
-        viewModelScope.launch(Dispatchers.Main) {
-            repository.signalFlow.collectLatest { signalInfo ->
-                val status = if (signalInfo.cells.isEmpty()) {
-                    "未能读取到信号数据"
-                } else {
-                    "已读取到信号数据 - ${signalInfo.networkType}"
-                }
-                _uiState.value = _uiState.value.copy(
-                    status = status,
-                    signals = signalInfo,
-                    isLoading = false
-                )
+        startDataCollection()
+    }
+
+    private fun startDataCollection() {
+        viewModelScope.launch {
+            repository.getDualSimCellularDataFlow().collect { (sim1Data, sim2Data) ->
+                _sim1Data.value = sim1Data
+                _sim2Data.value = sim2Data
+
+                updateCurrentSignalState()
+
+                Timber.d("SIM 1: ${sim1Data.servingCell?.operatorName}, 邻小区: ${sim1Data.neighborCells.size}")
+                Timber.d("SIM 2: ${sim2Data.servingCell?.operatorName}, 邻小区: ${sim2Data.neighborCells.size}")
             }
         }
     }
 
-    val requiredPermissions: List<String> = listOf(
-        Manifest.permission.ACCESS_FINE_LOCATION,
-        Manifest.permission.ACCESS_COARSE_LOCATION,
-        if (Build.VERSION.SDK_INT >= 34) {
-            Manifest.permission.READ_BASIC_PHONE_STATE
-        } else {
-            Manifest.permission.READ_PHONE_STATE
-        }
-    )
+    private fun updateCurrentSignalState() {
+        val currentData = if (activeSim == 1) _sim1Data.value else _sim2Data.value
+        val signalState = currentData?.servingCell?.let { cell ->
+            SignalState(
+                dbm = cell.dbm,
+                progress = ((cell.dbm + 120) / 60f).coerceIn(0f, 1f),
+                operatorName = cell.operatorName,
+                networkType = cell.networkType,
+                rsrp = "${cell.rsrp} dBm",
+                rsrq = "${cell.rsrq} dB",
+                sinr = if (cell.sinr != -20) "${cell.sinr} dB" else "N/A",
+                rssi = if (cell.rssi != -120) "${cell.rssi} dBm" else "N/A",
+                pci = cell.pci.toString(),
+                earfcn = cell.earfcn.toString(),
+                band = cell.band,
+                tac = if (cell.tac != 0) cell.tac.toString() else "N/A"
+            )
+        } ?: SignalState()
 
-    fun checkPermissions(activity: Activity? = null) {
-        val permissionState = permissionManager.checkPermissions(requiredPermissions, activity)
-        updateUiStateWithPermission(permissionState)
+        _currentSignalState.value = signalState
     }
 
-    fun missingPermissions(): List<String> = 
-        permissionManager.missingPermissions(requiredPermissions)
-
-    fun onPermissionResult(result: Map<String, Boolean>, activity: Activity?) {
-        val permissionState = permissionManager.handlePermissionResult(requiredPermissions, result, activity)
-        updateUiStateWithPermission(permissionState)
-        
-        if (permissionState.allGranted) {
-            refreshSignals()
-        } else if (permissionState.permanentlyDenied) {
-            showPermanentDenialDialog()
-        }
+    fun switchSim(simId: Int) {
+        activeSim = simId
+        updateCurrentSignalState()
     }
 
-    fun onPermissionDialogAccepted() {
-        // 用户接受权限说明，关闭弹窗，不再自动显示
-        hidePermissionDialog()
+    fun getCurrentNeighborCells(): List<NeighborCellUiModel> {
+        val currentData = if (activeSim == 1) _sim1Data.value else _sim2Data.value
+        return currentData?.neighborCells?.map { neighbor ->
+            NeighborCellUiModel(
+                pci = neighbor.pci,
+                rsrp = "${neighbor.rsrp} dBm",
+                rsrq = if (neighbor.rsrq != -20) "${neighbor.rsrq} dB" else "N/A",
+                sinr = if (neighbor.sinr != -20) "${neighbor.sinr} dB" else "N/A",
+                rssi = if (neighbor.rssi != -120) "${neighbor.rssi} dBm" else "N/A",
+                band = neighbor.band,
+                signalStrength = calculateSignalStrength(neighbor.rsrp)
+            )
+        } ?: emptyList()
     }
 
-    fun onPermissionDialogDeclined() {
-        // 用户拒绝权限说明，关闭弹窗，不再自动显示
-        hidePermissionDialog()
-    }
-
-    fun showPermissionDialog() {
-        _uiState.value = _uiState.value.copy(showPermissionDialog = true)
-    }
-
-    fun hidePermissionDialog() {
-        _uiState.value = _uiState.value.copy(showPermissionDialog = false)
-    }
-
-    fun showPermanentDenialDialog() {
-        _uiState.value = _uiState.value.copy(showPermanentDenialDialog = true)
-    }
-
-    fun hidePermanentDenialDialog() {
-        _uiState.value = _uiState.value.copy(showPermanentDenialDialog = false)
-    }
-
-    private fun updateUiStateWithPermission(permissionState: PermissionState) {
-        val showSettingsButton = permissionState.permanentlyDenied
-        val status = when {
-            permissionState.allGranted -> "权限已授予"
-            permissionState.permanentlyDenied -> "权限被永久拒绝，请在系统设置中开启定位/电话权限"
-            else -> "需要定位/电话权限以读取蜂窝信号，仅用于本地展示，不会上报。"
-        }
-        
-        // 根据权限状态设置弹窗显示
-        val showPermissionDialog = !permissionState.allGranted && !permissionState.permanentlyDenied
-        val showPermanentDenialDialog = permissionState.permanentlyDenied
-        
-        _uiState.value = _uiState.value.copy(
-            permissionState = permissionState,
-            showSettingsButton = showSettingsButton,
-            status = status,
-            showPermissionDialog = showPermissionDialog,
-            showPermanentDenialDialog = showPermanentDenialDialog
-        )
-    }
-
-    fun refreshSignals() {
-        val permissionState = permissionManager.checkPermissions(requiredPermissions)
-        if (!permissionState.allGranted) {
-            updateUiStateWithPermission(permissionState)
-            return
-        }
-        
-        _uiState.value = _uiState.value.copy(
-            isLoading = true, 
-            status = "读取信号中..."
-        )
-        
-        viewModelScope.launch(Dispatchers.Default) {
-            repository.fetchSignalInfo() // 调用后会自动更新StateFlow
-        }
-    }
-
-    fun registerCallback() {
-        repository.registerCallback()
-    }
-
-    fun unregisterCallback() {
-        repository.unregisterCallback()
-    }
-
-    fun checkPermissionsAndRegisterCallback() {
-        val permissionState = permissionManager.checkPermissions(requiredPermissions)
-        if (permissionState.allGranted) {
-            repository.registerCallback()
-        }
-    }
-
-    // 确保在ViewModel销毁时注销回调
-    override fun onCleared() {
-        super.onCleared()
-        repository.unregisterCallback()
+    private fun calculateSignalStrength(rsrp: Int): Float {
+        return ((rsrp + 120) / 60f).coerceIn(0f, 1f)
     }
 }
 
+data class NeighborCellUiModel(
+    val pci: Int,
+    val rsrp: String,
+    val rsrq: String,
+    val sinr: String,
+    val rssi: String,
+    val band: String,
+    val signalStrength: Float
+)

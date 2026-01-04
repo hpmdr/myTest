@@ -95,8 +95,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCellularRepository(telephonyManager: TelephonyManager, @ApplicationContext context: Context): CellularRepository {
-        return CellularRepository(telephonyManager, context)
+    fun provideCellularRepository(@ApplicationContext context: Context): CellularRepository {
+        return CellularRepository(context)
     }
 
     @Provides

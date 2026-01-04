@@ -1,306 +1,408 @@
 package cn.debubu.mytest.ui.cellular
 
-import android.app.Activity
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cn.debubu.mytest.ui.screen.signal.GsmSignalContent
-import cn.debubu.mytest.ui.screen.signal.LteSignalContent
-import cn.debubu.mytest.ui.screen.signal.NrSignalContent
-import cn.debubu.mytest.ui.screen.signal.SignalParameterItem
-import cn.debubu.mytest.ui.cellular.CellularViewModel
 
-/**
- * 蜂窝网络详细信息页面
- */
 @Composable
 fun CellularPage(viewModel: CellularViewModel = hiltViewModel()) {
-    val context = LocalContext.current
-    val activity = context as? Activity
-    val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+    val state by viewModel.currentSignalState
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { result ->
-        viewModel.onPermissionResult(result, activity)
+    val themeColor = remember(state.dbm) {
+        when {
+            state.dbm > -85 -> Color(0xFF386B28)
+            state.dbm > -105 -> Color(0xFF6C5D00)
+            else -> Color(0xFFBA1A1A)
+        }
     }
 
-    // 页面加载完成后，手动触发权限检查，确保Activity已经准备好
-    LaunchedEffect(Unit) {
-        viewModel.checkPermissions(activity)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        SimSwitcher(
+            activeSim = viewModel.activeSim,
+            onSimSelected = { viewModel.switchSim(it) }
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        SignalGaugeCard(state = state, color = themeColor)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "网络详细指标",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+        )
+
+        MetricsGrid(state = state)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        val neighborCellsList = viewModel.getCurrentNeighborCells()
+        if (neighborCellsList.isNotEmpty()) {
+            NeighborCellsSection(neighborCells = neighborCellsList)
+        }
     }
+}
 
-    // 监听 ON_RESUME 事件 - 应用进入前台时检查权限并注册回调
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        viewModel.checkPermissionsAndRegisterCallback()
+
+@Composable
+fun SimSwitcher(activeSim: Int, onSimSelected: (Int) -> Unit) {
+    Surface(
+        tonalElevation = 2.dp,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp)
+    ) {
+        Row(modifier = Modifier.padding(4.dp)) {
+            val modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+            SimTabItem(modifier, "SIM 1 (主卡)", activeSim == 1) { onSimSelected(1) }
+            SimTabItem(modifier, "SIM 2 (副卡)", activeSim == 2) { onSimSelected(2) }
+        }
     }
+}
 
-    // 监听 ON_PAUSE 事件 - 应用进入后台时注销回调
-    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
-        viewModel.unregisterCallback()
+@Composable
+fun SimTabItem(modifier: Modifier, label: String, selected: Boolean, onClick: () -> Unit) {
+    val containerColor =
+        if (selected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+    val contentColor =
+        if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Box(
+        modifier = modifier
+            .background(containerColor, CircleShape)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            label,
+            color = contentColor,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
     }
+}
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
-        val permissionState = uiState.permissionState
+@Composable
+fun SignalGaugeCard(state: SignalState, color: Color) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = state.progress,
+        animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
+        label = "progress"
+    )
 
-        // 只有当加载中或者所有权限都已授予时，才显示加载指示器和信号列表
-        if (uiState.isLoading || permissionState.allGranted) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = Modifier.padding(vertical = 12.dp))
-            }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(32.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(200.dp)) {
+                // 圆环 Canvas
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    drawArc(
+                        color = color.copy(alpha = 0.1f),
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                    drawArc(
+                        color = color,
+                        startAngle = -90f,
+                        sweepAngle = 360f * animatedProgress,
+                        useCenter = false,
+                        style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                }
 
-            if (permissionState.allGranted && uiState.signals != null) {
-                val signalInfo = uiState.signals
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    // 网络类型和通用信号参数合并到一个Card中
-                    item {
-                        Card(modifier = Modifier.padding(bottom = 12.dp)) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                // 第一行：网络类型信息
-                                Text(
-                                    text = "网络类型：${signalInfo.networkType}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                // 第二行：信号强度信息
-                                Text(
-                                    text = "信号强度：${signalInfo.dbm} dBm ${signalInfo.signalLevel}格信号",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                        }
+                // 中央文本
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "SIGNAL LEVEL",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color.copy(alpha = 0.6f)
+                    )
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            "${state.dbm}",
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
+                        Text(
+                            "dBm",
+                            modifier = Modifier.padding(bottom = 12.dp, start = 4.dp),
+                            color = color.copy(alpha = 0.5f)
+                        )
                     }
-
-                    // 详细信号参数放在一个Card中
-                    item {
-                        Card(modifier = Modifier.padding(bottom = 12.dp)) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                if (signalInfo.gsmSignal != null) {
-                                    GsmSignalContent(signal = signalInfo.gsmSignal)
-                                }
-
-                                if (signalInfo.lteSignal != null) {
-                                    LteSignalContent(signal = signalInfo.lteSignal)
-                                }
-
-                                if (signalInfo.nrSignal != null) {
-                                    NrSignalContent(signal = signalInfo.nrSignal)
-                                }
-                            }
-                        }
-                    }
-
-                    // 小区信息保持不变
-                    if (signalInfo.cells.isNotEmpty()) {
-                        item {
-                            SectionTitle(title = "小区信息")
-                        }
-
-                        signalInfo.cells.forEach { cell ->
-                            item {
-                                SignalParameterItem(
-                                    name = "Cell #${cell.index}",
-                                    value = "${cell.type} 信号: ${cell.dbm} dBm, 等级: ${cell.level}"
-                                )
-                            }
-                        }
+                    // 运营商标签
+                    Surface(
+                        color = color.copy(alpha = 0.12f),
+                        shape = CircleShape
+                    ) {
+                        Text(
+                            text = "${state.operatorName} ${state.networkType}",
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = color,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
         }
     }
-
-    // 权限说明弹窗
-    if (uiState.showPermissionDialog) {
-        PermissionExplanationDialog(
-            onAccept = {
-                viewModel.onPermissionDialogAccepted()
-                permissionLauncher.launch(uiState.permissionState.missingPermissions.toTypedArray())
-            },
-            onDecline = {
-                viewModel.onPermissionDialogDeclined()
-            }
-        )
-    }
-
-    // 永久拒绝权限引导弹窗
-    if (uiState.showPermanentDenialDialog) {
-        PermanentDenialDialog(
-            onGoToSettings = {
-                viewModel.hidePermanentDenialDialog()
-                openAppSettings(context)
-            },
-            onCancel = {
-                viewModel.hidePermanentDenialDialog()
-            }
-        )
-    }
 }
 
-private fun openAppSettings(context: android.content.Context) {
-    val intent = Intent(
-        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-        Uri.fromParts("package", context.packageName, null)
-    )
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    context.startActivity(intent)
-}
-
-/**
- * 分组标题组件
- */
 @Composable
-fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = MaterialTheme.typography.headlineSmall.fontWeight,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 4.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(all = 12.dp)
+fun MetricsGrid(state: SignalState) {
+    val items = listOf(
+        "RSRP" to state.rsrp to Icons.Default.SignalCellularAlt,
+        "RSRQ" to state.rsrq to Icons.Default.Timeline,
+        "SINR" to state.sinr to Icons.Default.Wifi,
+        "RSSI" to state.rssi to Icons.Default.Bolt,
+        "PCI" to state.pci to Icons.Default.Memory,
+        "EARFCN" to state.earfcn to Icons.Default.Layers,
+        "Band" to state.band to Icons.Default.Radio,
+        "TAC" to state.tac to Icons.Default.Map
     )
-}
 
-/**
- * 权限说明弹窗组件
- */
-@Composable
-fun PermissionExplanationDialog(
-    onAccept: () -> Unit,
-    onDecline: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDecline,
-        title = {
-            Text(
-                text = "需要蜂窝网络权限",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-        text = {
-            Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                Text(
-                    text = "为了提供蜂窝网络信号强度检测功能，我们需要获取以下权限：",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
+    // 使用 Column + Row 模拟网格，因为在 Scrollable 中嵌入 LazyGrid 会有冲突
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        for (i in items.indices step 2) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MetricItem(
+                    items[i].first.first,
+                    items[i].first.second,
+                    items[i].second,
+                    Modifier.weight(1f)
                 )
-
-                Text(
-                    text = "1. 精确位置权限",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "   - 用途：获取网络基站信息和定位相关的网络信号数据",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                )
-
-                Text(
-                    text = "2. 粗略位置权限",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "   - 用途：在无法获取精确位置时提供基本的网络信号信息",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                )
-
-                Text(
-                    text = "3. 电话状态权限",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(bottom = 4.dp)
-                )
-                Text(
-                    text = "   - 用途：读取设备的蜂窝网络状态和手机信息，用于分析信号强度",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(start = 16.dp)
-                )
-
-                Text(
-                    text = "所有数据仅在本地使用，不会上传至服务器或用于其他用途。",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onAccept) {
-                Text("授予权限")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDecline) {
-                Text("拒绝")
+                if (i + 1 < items.size) {
+                    MetricItem(
+                        items[i + 1].first.first,
+                        items[i + 1].first.second,
+                        items[i + 1].second,
+                        Modifier.weight(1f)
+                    )
+                }
             }
         }
-    )
+    }
 }
 
-/**
- * 永久拒绝权限引导弹窗
- */
 @Composable
-fun PermanentDenialDialog(
-    onGoToSettings: () -> Unit,
-    onCancel: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = {
-            Text(
-                text = "权限被永久拒绝",
-                style = MaterialTheme.typography.headlineSmall
-            )
-        },
-        text = {
-            Text(
-                text = "您已永久拒绝了必要的权限请求。为了使用蜂窝网络信号检测功能，请前往系统设置手动开启所需权限。",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onGoToSettings) {
-                Text("前往设置")
+fun MetricItem(label: String, value: String, icon: ImageVector, modifier: Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    icon,
+                    null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onCancel) {
-                Text("取消")
+            Spacer(Modifier.height(8.dp))
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+    }
+}
+
+@Composable
+fun NeighborCellsSection(neighborCells: List<NeighborCellUiModel>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.SignalCellularAlt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "邻小区信息",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = CircleShape
+                ) {
+                    Text(
+                        text = "${neighborCells.size}",
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                neighborCells.forEach { cell ->
+                    NeighborCellItem(cell = cell)
+                }
             }
         }
-    )
+    }
+}
+
+@Composable
+fun NeighborCellItem(cell: NeighborCellUiModel) {
+    val signalColor = when {
+        cell.signalStrength > 0.6f -> Color(0xFF386B28)
+        cell.signalStrength > 0.3f -> Color(0xFF6C5D00)
+        else -> Color(0xFFBA1A1A)
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "PCI: ${cell.pci}",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    if (cell.band.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = cell.band,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    SignalMetric("RSRP", cell.rsrp)
+                    SignalMetric("RSRQ", cell.rsrq)
+                    SignalMetric("SINR", cell.sinr)
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = signalColor.copy(alpha = 0.1f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.SignalCellularAlt,
+                    contentDescription = null,
+                    tint = signalColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SignalMetric(label: String, value: String) {
+    Column {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Medium,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
 }
