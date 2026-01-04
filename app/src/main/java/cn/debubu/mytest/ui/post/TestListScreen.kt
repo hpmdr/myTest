@@ -1,4 +1,4 @@
-package cn.debubu.mytest.ui.screen
+package cn.debubu.mytest.ui.post
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,10 +29,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import cn.debubu.mytest.data.model.PostModel
+import cn.debubu.mytest.ui.post.PostUiModel
 import cn.debubu.mytest.ui.navigation.currentNavController
-import cn.debubu.mytest.ui.viewmodel.PostUiState
-import cn.debubu.mytest.ui.viewmodel.PostViewModel
+import cn.debubu.mytest.ui.post.PostUiState
+import cn.debubu.mytest.ui.post.PostViewModel
 
 /**
  * 测试网络加载列表的主屏幕
@@ -100,7 +100,7 @@ fun ErrorScreen(modifier: Modifier = Modifier, message: String, onRetry: () -> U
 }
 
 @Composable
-fun PostList(posts: List<PostModel>, modifier: Modifier = Modifier) {
+fun PostList(posts: List<PostUiModel>, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -113,14 +113,18 @@ fun PostList(posts: List<PostModel>, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PostItem(post: PostModel, modifier: Modifier = Modifier) {
+fun PostItem(post: PostUiModel, modifier: Modifier = Modifier) {
     Card(modifier = modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(text = "id:${post.id}", style = MaterialTheme.typography.labelMedium)
             Column(modifier = Modifier.padding(start = 20.dp)) {
                 Text(text = post.title, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "post by user ${post.userId}",
+                    text = post.authorName,
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    text = post.displayDate,
                     style = MaterialTheme.typography.labelSmall
                 )
                 Text(

@@ -1,4 +1,4 @@
-package cn.debubu.mytest.ui.viewmodel
+package cn.debubu.mytest.ui.cellular
 
 import android.Manifest
 import android.app.Activity
@@ -6,10 +6,10 @@ import android.content.Context
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.debubu.mytest.data.model.CellularSignalModel
+import cn.debubu.mytest.data.cellular.CellularSignalModel
 import cn.debubu.mytest.data.permission.PermissionManager
 import cn.debubu.mytest.data.permission.PermissionState
-import cn.debubu.mytest.data.repository.CellularRepository
+import cn.debubu.mytest.data.cellular.CellularRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers

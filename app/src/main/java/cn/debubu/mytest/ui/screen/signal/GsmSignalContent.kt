@@ -2,7 +2,7 @@ package cn.debubu.mytest.ui.screen.signal
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
-import cn.debubu.mytest.data.model.GsmSignalModel
+import cn.debubu.mytest.data.cellular.GsmSignalModel
 
 @Composable
 fun GsmSignalContent(signal: GsmSignalModel) {

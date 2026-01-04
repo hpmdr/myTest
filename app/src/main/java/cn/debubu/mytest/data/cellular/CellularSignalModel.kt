@@ -1,4 +1,4 @@
-package cn.debubu.mytest.data.model
+package cn.debubu.mytest.data.cellular
 
 import android.telephony.CellInfo
 import android.telephony.CellSignalStrength

@@ -8,7 +8,7 @@ import cn.debubu.mytest.data.local.AppDatabase
 import cn.debubu.mytest.data.local.PostDao
 import cn.debubu.mytest.data.permission.PermissionManager
 import cn.debubu.mytest.data.remote.ApiService
-import cn.debubu.mytest.data.repository.CellularRepository
+import cn.debubu.mytest.data.cellular.CellularRepository
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides

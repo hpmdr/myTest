@@ -1,38 +1,5 @@
-# Android Studio project files
-*.iml                    # Module files
-.gradle                  # Gradle cache directory
 
-# Local configuration files
-/local.properties         # Local SDK paths and other local configs
-
-/.idea
-
-# Shared IDEA configuration files (optional - some teams ignore entire .idea)
-# /.idea/gradle.xml       # Gradle integration settings
-# /.idea/modules.xml      # Module structure
-# /.idea/misc.xml         # Miscellaneous settings
-# /.idea/deploymentTargetDropDown.xml # Deployment targets
-
-# OS generated files
-.DS_Store                # macOS desktop services store
-Thumbs.db                # Windows thumbnail cache
-
-# Build outputs
-/build                   # Top-level build directory
-/out                     # Additional build output directory
-/captures                # Screenshot and video captures
-.externalNativeBuild     # Native build artifacts
-.cxx                     # C++ build artifacts
-
-# Kotlin files
-*.kotlin_module          # Kotlin module descriptor files
-
-# Jetpack Compose specific
-compose_compiler_config_cache/ # Compose compiler cache
-
-# Debug files
-*.hprof                  # Heap dump files
-*.log                    # Log files
-
-# Option: Ignore entire .idea folder (uncomment to use)
-# /.idea/                 # Ignore all IDEA configuration
+/.gradle/
+/local.properties
+/build/
+/.idea/

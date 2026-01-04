@@ -1,10 +1,12 @@
-package cn.debubu.mytest.ui.viewmodel
+package cn.debubu.mytest.ui.post
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cn.debubu.mytest.data.model.PostModel
-import cn.debubu.mytest.data.repository.PostRepository
+import cn.debubu.mytest.data.post.PostEntity
+import cn.debubu.mytest.data.post.PostRepository
+import cn.debubu.mytest.ui.post.PostUiModel
+import cn.debubu.mytest.ui.post.PostUiModelMapper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,8 +18,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 // 1. 定义UI状态，这是一个很好的实践，可以清晰地表示UI可能处于的各种情况
+// 数据流向：ViewModel -> PostUiState -> UI层
 sealed interface PostUiState {
-    data class Success(val posts: List<PostModel>) : PostUiState
+    data class Success(val posts: List<PostUiModel>) : PostUiState
     data class Error(val message: String) : PostUiState
     object Loading : PostUiState
 }
@@ -28,13 +31,16 @@ class PostViewModel @Inject constructor(
 ) : ViewModel() {
 
     // 将 uiState 改为从 Repository 的 Flow 转换而来
+    // 数据流向：Repository（PostEntity） -> Mapper转换 -> PostUiState（PostUiModel） -> UI层
     val uiState: StateFlow<PostUiState> = repository.allPosts
-        .onStart { emit(emptyList<PostModel>()) } // 可选：初始时发射一个空列表
+        .onStart { emit(emptyList<PostEntity>()) } // 可选：初始时发射一个空列表
         .map { posts ->
             if (posts.isEmpty()) {
                 PostUiState.Loading // 如果数据库为空，显示加载中（并触发首次加载）
             } else {
-                PostUiState.Success(posts) // 如果有数据，直接显示
+                // 使用 Mapper 将 PostEntity 转换为 PostUiModel
+                val postUiModels: List<PostUiModel> = PostUiModelMapper.toUiModelList(posts)
+                PostUiState.Success(postUiModels) // 如果有数据，直接显示
             }
         }
         .catch { e -> emit(PostUiState.Error(e.message ?: "Unknown error")) }

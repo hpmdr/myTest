@@ -1,4 +1,4 @@
-package cn.debubu.mytest.data.repository
+package cn.debubu.mytest.data.cellular
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -15,11 +15,11 @@ import android.telephony.CellIdentityWcdma
 import android.content.Context
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
-import cn.debubu.mytest.data.model.CellInfoModel
-import cn.debubu.mytest.data.model.CellularSignalModel
-import cn.debubu.mytest.data.model.GsmSignalModel
-import cn.debubu.mytest.data.model.LteSignalModel
-import cn.debubu.mytest.data.model.NrSignalModel
+import cn.debubu.mytest.data.cellular.CellInfoModel
+import cn.debubu.mytest.data.cellular.CellularSignalModel
+import cn.debubu.mytest.data.cellular.GsmSignalModel
+import cn.debubu.mytest.data.cellular.LteSignalModel
+import cn.debubu.mytest.data.cellular.NrSignalModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject

@@ -5,7 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import cn.debubu.mytest.data.model.NrSignalModel
+import cn.debubu.mytest.data.cellular.NrSignalModel
 
 @Composable
 fun NrSignalContent(signal: NrSignalModel) {

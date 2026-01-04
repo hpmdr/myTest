@@ -1,4 +1,4 @@
-package cn.debubu.mytest.ui.screen
+package cn.debubu.mytest.ui.wifi
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize

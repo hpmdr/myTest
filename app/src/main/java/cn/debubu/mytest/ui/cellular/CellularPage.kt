@@ -1,4 +1,4 @@
-package cn.debubu.mytest.ui.screen
+package cn.debubu.mytest.ui.cellular
 
 import android.app.Activity
 import android.content.Intent
@@ -32,7 +32,7 @@ import cn.debubu.mytest.ui.screen.signal.GsmSignalContent
 import cn.debubu.mytest.ui.screen.signal.LteSignalContent
 import cn.debubu.mytest.ui.screen.signal.NrSignalContent
 import cn.debubu.mytest.ui.screen.signal.SignalParameterItem
-import cn.debubu.mytest.ui.viewmodel.CellularViewModel
+import cn.debubu.mytest.ui.cellular.CellularViewModel
 
 /**
  * 蜂窝网络详细信息页面

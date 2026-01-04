@@ -5,7 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import cn.debubu.mytest.data.model.LteSignalModel
+import cn.debubu.mytest.data.cellular.LteSignalModel
 
 @Composable
 fun LteSignalContent(signal: LteSignalModel) {

@@ -1,3 +1,5 @@
+package cn.debubu.mytest.ui.cellular
+
 /**
  * 信号状态数据类
  * 包含 UI 所需的所有原始数据

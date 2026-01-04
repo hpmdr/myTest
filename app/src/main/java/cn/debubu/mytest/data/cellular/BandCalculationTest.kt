@@ -1,4 +1,4 @@
-package cn.debubu.mytest.data.repository
+package cn.debubu.mytest.data.cellular
 
 /**
  * 频段计算测试工具类

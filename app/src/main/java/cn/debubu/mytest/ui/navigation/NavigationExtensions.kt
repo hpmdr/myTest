@@ -8,7 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import cn.debubu.mytest.ui.screen.AboutScreen
 import cn.debubu.mytest.ui.screen.MainScreen
-import cn.debubu.mytest.ui.screen.TestListScreen
+import cn.debubu.mytest.ui.post.TestListScreen
 
 /**
  * 导航扩展函数 - 官方推荐的最佳实践

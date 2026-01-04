@@ -1,6 +1,7 @@
 package cn.debubu.mytest.ui.screen
 
-import FakeCellularPage
+import cn.debubu.mytest.ui.cellular.FakeCellularPage
+import cn.debubu.mytest.ui.wifi.WifiPage
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
